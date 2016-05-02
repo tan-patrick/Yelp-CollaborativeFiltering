@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 # extract all restaurant reviews from all business reviews and write to reviews.json file
 # done for preprocessing
 import json

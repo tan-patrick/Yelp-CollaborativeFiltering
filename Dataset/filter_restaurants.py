@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 # python script to extract restaurants from yelp business data and write to new json file
 # done for preprocessing of data
 import json
