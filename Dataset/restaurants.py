@@ -46,6 +46,7 @@ class Restaurants(object):
 		self.restaurants = list()
 		self.load_restaurants(restaurants_file)
 
+	# add a restaurant to the list of restaurants
 	def add(self, restaurant):
 		self.restaurants.append(restaurant)
 
@@ -56,6 +57,7 @@ class Restaurants(object):
 				restaurant = Restaurant(entry)
 				self.add(restaurant)
 
+	# return the list of restaurants
 	def list_restaurants(self):
 		return self.restaurants
 
