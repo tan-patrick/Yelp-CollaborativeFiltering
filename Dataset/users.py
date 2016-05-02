@@ -7,7 +7,7 @@ class User(object):
 	def __init__(self, json_obj):
 		self.user = json.loads(json_obj)
 		self.reviews = dict() # key=restaurant, value=review text
-		#self.topics = not sure yet what type of data structure
+		self.topics = list()
 
 	def user_id(self):
 		return self.user['user_id']
@@ -36,42 +36,33 @@ class User(object):
 	def fans(self):
 		return self.user['fans']
 
-	def reviews(self):
-		return self.reviews
-
-	def add_review(self, review):
-		rid = review['business_id']
-		self.reviews[rid] = review['text']
-
-	# load all user's reviews into User
-	def load_reviews(self, reviews_data_file):
-		uid = self.user_id()
-		
-		with open(reviews_data_file, 'r') as rf:
-			for entry in rf:
-				review = json.loads(entry)	
-				if uid == review['user_id']:
-					self.add_review(review)
-
 	# topic-term matrix from LDA
-	#def load_topics(self, topics):
+	def load_topics(self, topics):
+		self.topics = topics
 			
 
 class Users(object):
 
-	def __init__(self, user_data_file):
+	# n_users = number of users loaded from user data file
+	def __init__(self, user_data_file, n_users=1000):
 		self.users = list()
-		self.load_users(user_data_file)
+		self.load_users(user_data_file, n_users)
 
+	# add user to list of users
 	def add(self, user):
 		self.users.append(user)
 
+	# return the list of users
 	def list_users(self):
 		return self.users
 
 	# load all users into Users class from user_data_file	
-	def load_users(self, user_data_file):
+	def load_users(self, user_data_file, n_users=1000):
 		with open(user_data_file, 'r') as uf:
+			i = 0
 			for entry in uf:
+				if i == n_users:
+					break
 				user = User(entry)
 				self.add(user)
+				i = i + 1
