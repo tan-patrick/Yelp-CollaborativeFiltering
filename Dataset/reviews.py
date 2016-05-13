@@ -10,8 +10,11 @@ class Reviews(object):
 
 	# load reviews from reviews.json file
 	def load_reviews(self, reviews_file):
+		count = 1;
 		with open(reviews_file, 'r') as rf:
 			for entry in rf:
+				print("Loading from file: %d of 1363242" % count)
+				count = count + 1
 				review = json.loads(entry)
 				user_id = review['user_id']
 				restaurant = review['business_id']
