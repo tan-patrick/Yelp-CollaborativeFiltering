@@ -13,7 +13,7 @@ class Reviews(object):
         count = 1;
         with open(reviews_file, 'r') as rf:
             for entry in rf:
-                #print("Loading from file: %d of 1363242" % count)
+                print("Loading from file: %d of 1363242" % count)
                 count = count + 1
                 review = json.loads(entry)
                 user_id = review['user_id']

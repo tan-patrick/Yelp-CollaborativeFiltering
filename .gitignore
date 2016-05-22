@@ -1,2 +1,5 @@
 Dataset/yelp_dataset_challenge_academic_dataset/*.json
 Dataset/*.json
+Dataset/*.pyc
+Dataset/__pycache__
+.idea/

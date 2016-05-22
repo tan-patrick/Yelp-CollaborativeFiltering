@@ -2,6 +2,7 @@
 # main restaurant recommendation program
 import os
 import sys
+import csv
 import json
 from sklearn.feature_extraction.text import CountVectorizer
 #from sklearn.decomposition import LatentDirichletAllocation
@@ -79,11 +80,10 @@ if __name__ == '__main__':
                 restaurant_dict[business_id] = list()
             restaurant_dict[business_id].append((count, rating))
             user.add_review(count, rating)
-            count += 1
-        
+
         # print ("Time to load reviews for user: %d s" % (time() - stime))
-        # count = len(collected_reviews)
-        # print ("Loading dictionary: %d of 1363242" % count)
+        count = count + 1
+        print ("Loading dictionary: %d of %d" % (count, n_users))
 
     # build review-term matrix
     vocab_error = False
@@ -105,8 +105,8 @@ if __name__ == '__main__':
     #model = LatentDirichletAllocation(n_topics=n_topics, learning_method='online', max_iter=maximum_iter, random_state=0)
     model = lda.LDA(n_topics=n_topics, n_iter=maximum_iter, random_state=0)
     model.fit(tf)
-    #top_words = tf_vectorizer.get_feature_names()
-    #print_top_words(model, top_words, 10)
+    top_words = tf_vectorizer.get_feature_names()
+    print_top_words(model, top_words, 10)
     review_topic_matrix = model.transform(tf)
     print ("Time to apply LDA: %d s" % (time() - stime))
 
@@ -116,6 +116,10 @@ if __name__ == '__main__':
         # for each review written by U
             # add corresponding review topic vector to user_topic,
             # scaled by rating/all of U's ratings
+
+    users_topic_file = "user_topic_matrix.csv"
+    users_topic_fd = open(users_topic_file, 'w')
+    wr = csv.writer(users_topic_fd, quoting=csv.QUOTE_ALL)
     stime = time()
     for user in users.list_users():
         user_topic = [0]*n_topics
@@ -125,14 +129,22 @@ if __name__ == '__main__':
             rating = review[1]
             rating_sum += rating
             user_topic = [sum(x) for x in zip(user_topic, [rating*y for y in review_topic_matrix[idx]])]
-        #print ("rating sum = %d" % rating_sum)
+        # print ("rating sum = %d" % rating_sum)
         try:
             user_topic = [x/rating_sum for x in user_topic]
-            #print user_topic
+            # print (user_topic)
+            # print(user.user_id())
+            wr.writerow([user.user_id()] + user_topic)
         except ZeroDivisionError:
             continue
         user.load_topic_vec(user_topic)
     print ("Time to compute user-topic vectors: %d s" % (time() - stime))
+
+    users_topic_fd.close()
+
+    restaurant_topic_file = "restaurant_topic_matrix.csv"
+    restaurant_topic_fd = open(restaurant_topic_file, 'w')
+    wr = csv.writer(restaurant_topic_fd, quoting=csv.QUOTE_ALL)
 
     # load all restaurant data 
     restaurant_data_path = "/restaurants.json"
@@ -168,9 +180,12 @@ if __name__ == '__main__':
             restaurant_topic = [sum(x) for x in zip(restaurant_topic, [rating*y for y in review_topic_matrix[idx]])]
         try:
             restaurant_topic = [x/rating_sum for x in restaurant_topic]
-            #print restaurant_topic
+            # print (restaurant_topic)
+            # print(restaurant.business_id())
+            wr.writerow([restaurant.business_id()] + restaurant_topic)
         except ZeroDivisionError:
             continue
         restaurant.load_topic_vec(restaurant_topic)
     print ("Time to compute restaurant-topic vectors: %d s" % (time() - stime))
 
+    restaurant_topic_fd.close()
