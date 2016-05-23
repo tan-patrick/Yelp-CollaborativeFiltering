@@ -39,7 +39,11 @@ def train(rating_set, max_rank, min_epochs=0, max_epochs=100, learning_rate=0.00
                         singular_values,
                         item_features)
 
+def predicted_rating(model, user, item):
+    sum([model.U[model.user_to_index[user],r] * model.S[r] * model.V[model.item_to_index[item],r] for r in range(len(model.S))])
+
 if __name__ == "__main__":
 	rating_set = load_dataset()
 	model = train(rating_set, 1, 0, 1)
+	#get rating for a user by calling predicted_rating(model, $user_id, $item_name)
 
