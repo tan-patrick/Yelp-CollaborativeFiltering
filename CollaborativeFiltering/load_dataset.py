@@ -1,4 +1,3 @@
-import urllib
 import random
 from sets import Set
 from classes import Rating, RatingSet
@@ -40,10 +39,10 @@ def load_dataset(split_ratio=0.10):
         item = original_id_to_movie[movie]
         #planning to remove _to_index lists
         if user not in user_to_index:
-            user_index = user_to_index[user] = len(user_to_index)+1
+            user_index = user_to_index[user] = len(user_to_index)
         if item not in item_to_index:
-            item_index = item_to_index[item] = len(item_to_index)+1
-        ratings.append(Rating(user,item, rating))
+            item_index = item_to_index[item] = len(item_to_index)
+        ratings.append(Rating(user_index,item_index, float(rating)))
     training_set, test_set = split_ratings(ratings, split_ratio)
     return RatingSet(training_set, test_set, user_to_index, item_to_index)
 
