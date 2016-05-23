@@ -1,26 +1,10 @@
 from numpy import *
+from load_dataset import *
+from classes import Residual, RatingSet, RatingsModel, Rating
 
-class Residual:
-	def __init__(self, value, current_error, previous_error):
-		self.value = value
-		self.current_error = current_error
-		self. previous_error = previous_error
-
-class Rating_Set:
-	def __init__(self, value, current_error, previous_error):
-		self.value = value
-
-class Ratings_Model:
-	def __init__(self, user_to_index, item_to_index, U, S, V):
-		self.user_to_index = user_to_index
-		self.item_to_index = item_to_index
-		self.U = U
-		self.S = S
-		self.V = V
-
-def train(rating_set, max_rank, min_epochs=0, max_epochs=100, learning_rate=0.001):
-	user_features = [0.1 for i in range(rating_set.users_map)]
-	item_features = [0.1 for i in range(rating_set.items_map)]
+def train(rating_set, max_rank, min_epochs=0, max_epochs=100, learning_rate=0.001, regularizer=0.02):
+	user_features = [0.1 for i in range(len(rating_set.user_to_index))]
+	item_features = [0.1 for i in range(len(rating_set.item_to_index))]
 	residuals = [Residual(rating.value, 0.0, 0.0) for rating in rating_set.training_set]
 	num_ratings = len(rating_set.training_set)
 	for rank in range(1, max_rank):
@@ -53,5 +37,6 @@ def train(rating_set, max_rank, min_epochs=0, max_epochs=100, learning_rate=0.00
                         item_features)
 
 if __name__ == "__main__":
-	#load data, and then call train function
-	
+	rating_set = load_dataset()
+	model = train(rating_set, 25)
+
