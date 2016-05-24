@@ -51,12 +51,12 @@ if __name__ == '__main__':
     # somewhat randomly chosen for now
     # for more explanation of the meaning of LatentDirichletAllocations()'s
     # arguments, see http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.LatentDirichletAllocation.html
-    n_topics = 50
+    n_topics = 100
     maximum_iter = 50
 
     # load user data from appropriate file
     # 388612 maximum total filtered users
-    n_users = 1000
+    n_users = 388612
     user_data_path = "/users.json"
     stime = time()
     users = users.Users(path_to_Dataset + user_data_path, n_users=n_users)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     count = 0
     for user in users.list_users():
         # load all of user's restaurant reviews
-        ount = count + 1
+        count = count + 1
         stime = time()
         uid = user.user_id()
         user_reviews = reviews.get_reviews_for_user(uid)
