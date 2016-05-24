@@ -45,7 +45,8 @@ if __name__ == '__main__':
     maximum_iter = 50
 
     # load user data from appropriate file
-    n_users = 10000
+    # 388612 total filtered users
+    n_users = 388612
     user_data_path = "/users.json"
     stime = time()
     users = users.Users(path_to_Dataset + user_data_path, n_users=n_users)
@@ -132,8 +133,8 @@ if __name__ == '__main__':
         # print ("rating sum = %d" % rating_sum)
         try:
             user_topic = [x/rating_sum for x in user_topic]
-            # print (user_topic)
-            # print(user.user_id())
+            print (user_topic)
+            print(user.user_id())
             wr.writerow([user.user_id()] + user_topic)
         except ZeroDivisionError:
             continue
@@ -180,8 +181,8 @@ if __name__ == '__main__':
             restaurant_topic = [sum(x) for x in zip(restaurant_topic, [rating*y for y in review_topic_matrix[idx]])]
         try:
             restaurant_topic = [x/rating_sum for x in restaurant_topic]
-            # print (restaurant_topic)
-            # print(restaurant.business_id())
+            print (restaurant_topic)
+            print(restaurant.business_id())
             wr.writerow([restaurant.business_id()] + restaurant_topic)
         except ZeroDivisionError:
             continue

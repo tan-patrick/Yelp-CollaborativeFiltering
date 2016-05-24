@@ -3,6 +3,7 @@
 # done for preprocessing
 import json
 import restaurants
+import random
 
 # get list of restaurants, build restaurant_id-->name dict
 # iterate through list of reviews, checking if corresponding
@@ -19,7 +20,8 @@ if __name__ == '__main__':
 	for r in restaurants.list_restaurants():
 		restaurant_dict[r.business_id()] = r.name()
 	
-	reviews_fp = open("reviews.json", 'w')
+	training_reviews_fp = open("reviews.json", 'w')
+	test_reviews_fp = open("test_reviews.json", 'w')
 
 	# iterate through all reviews and only write restaurant reviews to "reviews.json"	
 	reviews_data_file = "./yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_review.json"
@@ -27,6 +29,11 @@ if __name__ == '__main__':
 		for entry in rf:
 			review = json.loads(entry)
 			if restaurant_dict.get(review['business_id']):
-				reviews_fp.write(entry)
+				validation = random.random()
+				if validation <= .9:
+					training_reviews_fp.write(entry)
+				else:
+					test_reviews_fp.write(entry)
 	
-	reviews_fp.close()
+	training_reviews_fp.close()
+	test_reviews_fp.close()
