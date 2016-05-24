@@ -20,6 +20,8 @@ import restaurants
 import reviews
 
 def print_top_words(model, feature_names, n_top_words):
+    topic_file = "topic_matrix.csv"
+    topic_fd = open(topic_file, 'w')
     for topic_idx, topic in enumerate(model.components_):
         test = topic.argsort()[:-n_top_words - 1:-1]
         print("Topic #%d:" % topic_idx)
@@ -27,7 +29,15 @@ def print_top_words(model, feature_names, n_top_words):
                         for i in topic.argsort()[:-n_top_words - 1:-1]]))
         print(" ".join(str([topic[i]
                         for i in topic.argsort()[:-n_top_words - 1:-1]])))
+        topic_fd.write("Topic #%d:" % topic_idx)
+        topic_fd.write(" ".join([feature_names[i]
+                        for i in topic.argsort()[:-n_top_words - 1:-1]]))
+        topic_fd.write(" ".join(str([topic[i]
+                        for i in topic.argsort()[:-n_top_words - 1:-1]])))
+        topic_fd.write("\n")
     print()
+
+    topic_fd.close()
 
 if __name__ == '__main__':
 
@@ -45,8 +55,8 @@ if __name__ == '__main__':
     maximum_iter = 50
 
     # load user data from appropriate file
-    # 388612 total filtered users
-    n_users = 388612
+    # 388612 maximum total filtered users
+    n_users = 1000
     user_data_path = "/users.json"
     stime = time()
     users = users.Users(path_to_Dataset + user_data_path, n_users=n_users)
@@ -65,6 +75,7 @@ if __name__ == '__main__':
     count = 0
     for user in users.list_users():
         # load all of user's restaurant reviews
+        ount = count + 1
         stime = time()
         uid = user.user_id()
         user_reviews = reviews.get_reviews_for_user(uid)
@@ -83,7 +94,6 @@ if __name__ == '__main__':
             user.add_review(count, rating)
 
         # print ("Time to load reviews for user: %d s" % (time() - stime))
-        count = count + 1
         print ("Loading dictionary: %d of %d" % (count, n_users))
 
     # build review-term matrix
