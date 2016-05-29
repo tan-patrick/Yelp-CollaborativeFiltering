@@ -20,15 +20,16 @@ if __name__ == '__main__':
 	restaurant_rating = {} #{restaurantid1:4.0,restaurantid2:3.5}
 	user_average_rating = {} #{userid1:4.0,userid2:3.5...}
 	baseline_prediction = {} #{userid1:{restaurant1:1.1, restaurant2:3.0,...}...}
-	knn_prediction = {} #{userid1:{restaurant1:1.1, restaurant2:3.0,...}...}
+	knn_prediction_user = {} #{userid1:{restaurant1:1.1, restaurant2:3.0,...}...}
+	knn_prediction_item = {} #{userid1:{restaurant1:1.1, restaurant2:3.0,...}...}
 	restaurant_index = {} #{restaurant1: {user1: 4.0,..}} -> {restaurant1: [user1,user2...]}
 	user_index = {} #{userid1:{restaurant1:1.1, restaurant2:3.0,...}...}
 
 	restaurant_data_path = "/restaurants.json"
-	user_data_path = "/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_user.json"
-	# user_data_path = "../../spark-1.6.0-bin-hadoop2.6/249_CloudComputing/data/yelp_academic_dataset_user.json"
+	user_data_path = "/users.json"
 	review_data_path = "/test_reviews.json"
 	user_topic_matrix_data_path = '/user_topic_matrix_all_users.csv'
+	restaurant_topic_matrix_data_path = '/restaurant_topic_matrix_all_users.csv'
 
 	# compute the average rating of all restaurants by all users -> average_restaurants_rating
 	restaurants = restaurants.Restaurants(path_to_Dataset + restaurant_data_path)
@@ -47,7 +48,7 @@ if __name__ == '__main__':
 	print "Time after computing average rating for all: %d s" % (time() - start)
 	# loop through all the reviews, compute the bias between [average_restaurants_rating, user's average rating] & [average_restaurants_rating, restaurant's average rating]
 	# construct user_average_rating dictionary 
-	with open(user_data_path, 'r') as uf:
+	with open(path_to_Dataset + user_data_path, 'r') as uf:
 		for entry in uf:
 			user = json.loads(entry)
 			user_id = user['user_id']
@@ -101,10 +102,18 @@ if __name__ == '__main__':
 			user_topic_matrix[row[0]] = row[1:]
 	print "Time after constructing user_topic_matrix: %d s" % (time() - start)
 
+	# construct restaurant_topic_matrix
+	restaurant_topic_matrix = {} # {restaurant1: [matrix],restaurant2: [matrix]}
+	with open(path_to_TopicModeling + restaurant_topic_matrix_data_path, 'r') as f:
+		reader = csv.reader(f)
+		for row in reader:
+			restaurant_topic_matrix[row[0]] = row[1:]
+	print "Time after constructing restaurant_topic_matrix: %d s" % (time() - start)
+
 	# predict how user u would rate on restaurant r by knn
 	# find N nearest users who has rated r
 	# r_predict = baseline_ur + all N users as user i sum(r_ir - baseline_ir ) * similarity(ui)
-	N = 2
+	N = 3
 	count = 0
 	with open(path_to_Dataset + review_data_path, 'r') as rf:
 		for entry in rf:
@@ -119,12 +128,41 @@ if __name__ == '__main__':
 			review_restaurant_id = review['business_id']
 			baseline_ur = baseline_prediction[review_user_id][review_restaurant_id][1]
 
+			### Item-Based ###
+			# restaurants that this user rated 
+			visited_restaurants = user_index[review_user_id]
+
+			# compute similarity 
+			restaurant_topic_i_list = []
+			restaurant_topic_r = [restaurant_topic_matrix[review_restaurant_id]]
+			for r in visited_restaurants:
+				restaurant_topic_i_list.append(restaurant_topic_matrix[r])
+			r_similarity_vector = cosine_similarity(restaurant_topic_r, restaurant_topic_i_list)[0]
+			r_similarity_vector_index = zip(visited_restaurants, r_similarity_vector) # [(u1,0.5),(u2,0.3)...]
+
+			# n nearest restaurants
+			n_restaurants = sorted(r_similarity_vector_index, key=lambda x: x[1], reverse=True)[:N]
+
+			sum_restaurants = 0
+			for restaurant_i in n_restaurants:
+				restaurant_id = restaurant_i[0]
+				sim_ri = restaurant_i[1]
+				rating_ui = user_index[review_user_id][restaurant_id]
+				baseline_ui = baseline_prediction[review_user_id][restaurant_id][1]
+				sum_restaurants += (rating_ui - baseline_ui) * sim_ri
+	
+			predicted_rating = baseline_ui + sum_restaurants
+			if review_user_id not in knn_prediction_item:
+				knn_prediction_item[review_user_id] = {review_restaurant_id: (actual_rating, predicted_rating)}
+			else:
+				knn_prediction_item[review_user_id][review_restaurant_id] = (actual_rating, predicted_rating)
+
+			### User-Based ###
 			# users that rated this restaurant
 			review_users = restaurant_index[review_restaurant_id]
 
 			# compute similarity 
 			user_topic_i_list = []
-			user_similarity_index = {}
 			user_topic_u = [user_topic_matrix[review_user_id]]
 			for user in review_users:
 				user_topic_i_list.append(user_topic_matrix[user])
@@ -143,17 +181,20 @@ if __name__ == '__main__':
 				sum_users += (rating_ir - baseline_ir) * sim_ui
 	
 			predicted_rating = baseline_ur + sum_users
-			if review_user_id not in knn_prediction:
-				knn_prediction[review_user_id] = {review_restaurant_id: (actual_rating, predicted_rating)}
+			if review_user_id not in knn_prediction_user:
+				knn_prediction_user[review_user_id] = {review_restaurant_id: (actual_rating, predicted_rating)}
 			else:
-				knn_prediction[review_user_id][review_restaurant_id] = (actual_rating, predicted_rating)
+				knn_prediction_user[review_user_id][review_restaurant_id] = (actual_rating, predicted_rating)
 
 	print "Time after knn prediction: %d s" % (time() - start)
 
-	rmse_knn = compute_rmse(knn_prediction)
-	print rmse_knn # 0.799371312757
-	print "RMSE Knn: " + str(rmse_knn)
-	print "RMSE Baseline: " + str(rmse_baseline)
+	rmse_knn_user = compute_rmse(knn_prediction_user)
+	rmse_knn_item = compute_rmse(knn_prediction_item)
+	#User-based N=1: 0.0203146370375, N=2: 0.799371312757, N=3: 1.08932264981
+	#User-based N=1: 1.7791289907e-16, N=2: 0.857869922567, N=3: 1.08348058864
+	print "RMSE Knn User-Based: " + str(rmse_knn_user)
+	print "RMSE Knn Item-Based: " + str(rmse_knn_item)
+	print "RMSE Baseline: " + str(rmse_baseline) # 1.10317009433
 	print "Time after evaluation: %d s" % (time() - start)
 	# Approach 2 -> topic modeling to cluster restaurants -> treat each cluster as individual restaurant
 
